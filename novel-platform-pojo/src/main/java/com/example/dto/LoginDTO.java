@@ -14,7 +14,7 @@ public class LoginDTO {
 
     @NotBlank(message = "用户名不能为空")
     @Schema(description = "用户名", example = "novel_fan")
-    /*避免出现用户明明注册成功，登录被 DTO 拦截，所以和RegisterDTO做了区分*/
+    /*避免出现用户明明注册成功，登录被 DTO 拦截，所以用户名和RegisterDTO做了小小的区分*/
     private String username;
 
     @NotBlank(message = "密码不能为空")

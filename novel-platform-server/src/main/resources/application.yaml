@@ -16,7 +16,7 @@ mybatis-plus:
     db-config:
       id-type: assign_id
       logic-delete-field: deleted
-      logic-delete-value: 1
+      logic-delete-value: 1               #使用BaseMapper提供的方法时，MP自动加AND deleted = 0，自定义的注解 （如：@Select） SQL，MP不会自动帮你加逻辑删除条件，所以要在mp加上 AND deleted = 0
       logic-not-delete-value: 0
 
 # Knife4j API文档
@@ -36,3 +36,8 @@ logging:
   level:
     root: info
     com.example: debug
+
+# JWT 配置
+jwt:
+  secret: D3F4UL7K8L0M1N2B3V5C6X7Z8Q9W0E1R2T3Y4U5I6O7P8A9S0D1F2G3H4J5K6L7
+  expiration: 7200  #

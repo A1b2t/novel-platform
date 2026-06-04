@@ -1,5 +1,6 @@
 package com.example.novelplatformserver.controller.portal.auth;
 
+import com.example.context.UserContext;
 import com.example.dto.LoginDTO;
 import com.example.dto.RegisterDTO;
 import com.example.novelplatformserver.service.AuthService;
@@ -34,8 +35,8 @@ public class AuthController {
      *
      * @return
      */
-    @Operation(summary = "用户注册")
-    @RequestMapping("/register")
+    @Operation(summary = "用户注册接口")
+    @PostMapping("/register")
     public Result<Void> register(@RequestBody @Valid RegisterDTO dto){
         authService.register(dto);
         return Result.success();
@@ -44,7 +45,7 @@ public class AuthController {
     /**
      * 登录
      */
-    @Operation(summary = "用户登录")
+    @Operation(summary = "用户登录接口")
     @PostMapping("/login")
     public Result<LoginVO> login(@RequestBody @Valid LoginDTO dto){
         LoginVO vo = authService.login(dto);
@@ -54,11 +55,11 @@ public class AuthController {
     /**
      * 获取当前用户信息
      */
-    @Operation(summary = "获取当前登录用户")
+    @Operation(summary = "获取当前登录用户信息接口")
     @GetMapping("/me")
-    public Result<UserInfoVO> me(){
-        // TODO: 从 Token 中获取当前用户ID
-        Long userId = 1L;
+    public Result<UserInfoVO> me() {
+        Long userId = UserContext.getUserId();
+        log.info("current user id = {}", userId);
         UserInfoVO vo = authService.getCurrentUserInfo(userId);
         return Result.success(vo);
     }
@@ -66,7 +67,7 @@ public class AuthController {
     /**
      * 退出登录
      */
-    @Operation(summary = "退出登录")
+    @Operation(summary = "退出登录接口")
     @PostMapping("/logout")
     public Result<Void> logout(){
         authService.logout();

@@ -3,6 +3,7 @@ package com.example.exception;
 import com.example.response.Result;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,7 +34,7 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .findFirst()    //只取第一个失败字段
                 .map(FieldError::getDefaultMessage) //提取注解里的 message 值
-                .orElse("参数校验失败");  //如果没写 message，用兜底文案
+                .orElse("参数校验失败");  //如果没写 message，写默认文案
         log.warn("参数校验失败: {}", message);
         return Result.error(400, message);
     }
@@ -45,6 +46,17 @@ public class GlobalExceptionHandler {
     public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
         log.warn("参数校验失败: {}", e.getMessage());
         return Result.error(400, e.getMessage());
+    }
+
+    /**
+     * 数据库唯一约束冲突（高并发兜底）
+     * Service检查（提前拦截）+数据库唯一约束（兜底报错转友好提示）
+     */
+    //目前就这username的约束，就这一个场景，就不判断message值了
+    @ExceptionHandler(DuplicateKeyException.class)
+    public Result<Void> handleDuplicateKeyException(DuplicateKeyException e) {
+        log.warn("数据重复: {}", e.getMessage());
+        return Result.error("用户名已存在");
     }
 
     /**

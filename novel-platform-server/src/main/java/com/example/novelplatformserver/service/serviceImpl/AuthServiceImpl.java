@@ -1,19 +1,27 @@
 package com.example.novelplatformserver.service.serviceImpl;
 
 import com.example.novelplatformserver.mapper.UserMapper;
+import com.example.novelplatformserver.mapper.UserRoleMapper;
 import com.example.novelplatformserver.service.AuthService;
+import com.example.novelplatformserver.utils.JwtUtil;
+import com.example.constant.RoleConstant;
 import com.example.dto.LoginDTO;
 import com.example.dto.RegisterDTO;
 import com.example.entity.User;
+import com.example.entity.UserRole;
 import com.example.exception.BusinessException;
 import com.example.vo.LoginVO;
 import com.example.vo.UserInfoVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 认证服务实现
@@ -24,10 +32,13 @@ import org.springframework.util.StringUtils;
 public class AuthServiceImpl implements AuthService {
 
     private static final String TOKEN_TYPE = "Bearer";
-    private static final Long EXPIRE_TIME = 7200L;
-
     private final UserMapper userMapper;
+    private final UserRoleMapper userRoleMapper;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
+    @Value("${jwt.expiration}")
+    private Long expireTime;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -46,14 +57,25 @@ public class AuthServiceImpl implements AuthService {
         // 3. 构建用户对象
         User user = new User();
         user.setUsername(dto.getUsername());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        /*学习了一下，.encode()方法大概就是：
+        1.生成随机盐值    2.固定p、s两个数组（p、s盒，Blowfish算法的pi常熟）
+        3.用盐值异或p盒...    4.执行 2^strength轮的加密算法
+        5.最终编码成字符串（应该16进制）
+        * */
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));//加密密码再存库（BCrypt加密存储）
         user.setNickname(StringUtils.hasText(dto.getNickname()) ? dto.getNickname() : dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
 
-        // 4. 保存到数据库
+        // 4. 保存用户
         userMapper.insert(user);
-        log.info("用户注册成功: {}", user.getUsername());
+
+        // 5. 分配默认角色
+        UserRole role = new UserRole();
+        role.setUserId(user.getId());   //现在有值了
+        role.setRoleCode(RoleConstant.USER);
+        userRoleMapper.insert(role);
+        log.info("用户注册成功, id:{}, username:{}", user.getId(), user.getUsername());
     }
 
     @Override
@@ -61,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
         // 1. 根据用户名查询用户
         User user = userMapper.selectByUsername(dto.getUsername());
         if (user == null) {
-            throw new RuntimeException("用户名或密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         // 2. 校验密码
@@ -69,15 +91,19 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        // 3. 生成 JWT Token
-        // TODO: 引入 JWT 工具类
-        String token = "placeholder_token";
+        // 3. 查询角色
+        List<UserRole> userRoles = userRoleMapper.selectByUserId(user.getId());
+        String role = userRoles.stream()
+                .map(UserRole::getRoleCode)
+                .collect(Collectors.joining(","));
 
-        log.info("用户登录成功: {}", user.getUsername());
+        // 4. 生成 JWT Token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), role);
+        log.info("用户登录成功, id:{}, username:{}", user.getId(), user.getUsername());
         return LoginVO.builder()
                 .token(token)
                 .tokenType(TOKEN_TYPE)
-                .expireTime(EXPIRE_TIME)
+                .expireTime(expireTime)
                 .build();
     }
 
@@ -89,7 +115,13 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("用户不存在");
         }
 
-        // 2. 组装 VO
+        // 2. 查询角色
+        List<UserRole> userRoles = userRoleMapper.selectByUserId(userId);
+        List<String> roles = userRoles.stream()
+                .map(UserRole::getRoleCode)
+                .collect(Collectors.toList());
+
+        // 3. 组装 VO
         return UserInfoVO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -98,6 +130,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .vipStatus(user.getVipStatus())
+                .roles(roles)
                 .build();
     }
 

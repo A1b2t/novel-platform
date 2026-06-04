@@ -15,6 +15,9 @@
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
+        <!--spring-boot-starter-security不在这里用，common可以"被依赖"，但不能"依赖业务框架"
+        ai举的例子比如：以后想做一个上传工具
+                会发现：你必须带 Spring Security 才能用这个工具库，这是"污染"-->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
