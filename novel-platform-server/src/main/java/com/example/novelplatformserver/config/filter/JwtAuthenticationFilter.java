@@ -1,6 +1,7 @@
 package com.example.novelplatformserver.config.filter;
 
 import com.example.context.UserContext;
+import com.example.novelplatformserver.service.TokenService;
 import com.example.novelplatformserver.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -26,6 +27,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(
@@ -37,6 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String header = request.getHeader("Authorization");
             if (header != null && header.startsWith("Bearer ")) {
                 String token = header.substring(7);
+
+                //检查 Token 是否已加入黑名单（退出登录后）
+                if (tokenService.isBlacklisted(token)) {
+                    filterChain.doFilter(request, response);    //不放行，直接跳过
+                    return;
+                }
+
                 Claims claims = jwtUtil.parseToken(token);
 
                 //报错了，这种大整数经过Jackson/JJWT解析：极有可能不是 Long，而是 Integer / BigInteger / Number
@@ -49,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 //String role = claims.get("role", String.class)    //报错
                 String role = claims.get("role", String.class).toUpperCase();
 
-                UserContext.setUserId(userId);
+                UserContext.setUserId(userId);  //SecurityContextHolder获取id比较麻烦
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

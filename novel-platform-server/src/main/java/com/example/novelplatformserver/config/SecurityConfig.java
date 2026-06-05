@@ -40,7 +40,8 @@ public class SecurityConfig {
                 // 配置接口权限
                 .authorizeHttpRequests(auth -> auth
                                 // 登录注册放行
-                                .requestMatchers("/api/v1/portal/auth/**").permitAll()
+                                .requestMatchers("/api/v1/portal/auth/register").permitAll()
+                                .requestMatchers("/api/v1/portal/auth/login").permitAll()
                                 // Knife4j 文档放行
 //                .requestMatchers(
 //                    "/swagger-ui/**",

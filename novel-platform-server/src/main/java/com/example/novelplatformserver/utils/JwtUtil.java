@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -22,7 +23,7 @@ public class JwtUtil {
 
     private SecretKey key;
 
-    @PostConstruct
+    @PostConstruct  //Spring 会在依赖注入完成后、Bean 正式投入使用前自动调用这个方法
     public void init() {
         key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
@@ -33,6 +34,7 @@ public class JwtUtil {
     public String generateToken(Long userId, String username, String role) {
         Date now = new Date();
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())  // jti：Token唯一标识，用于黑名单，用userId+签发时间更靠谱（避免同一毫秒冲突）
                 .claim("userId", userId)
                 .claim("username", username)
                 .claim("role", role)
@@ -65,5 +67,23 @@ public class JwtUtil {
      */
     public boolean isExpired(String token) {
         return parseToken(token).getExpiration().before(new Date());
+    }
+
+    /**
+     * 获取 Token 的唯一标识（用于 Redis 黑名单）
+     */
+    public String getTokenId(String token) {
+        Claims claims = parseToken(token);
+        return claims.getId();
+    }
+
+    /**
+     * 获取 Token 剩余有效时间（秒）
+     */
+    public long getRemainingTime(String token) {
+        Claims claims = parseToken(token);
+        long now = System.currentTimeMillis();
+        long exp = claims.getExpiration().getTime();
+        return Math.max(0, (exp - now) / 1000);
     }
 }

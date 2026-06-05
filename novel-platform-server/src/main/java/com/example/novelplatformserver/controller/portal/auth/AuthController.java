@@ -69,10 +69,10 @@ public class AuthController {
      */
     @Operation(summary = "退出登录接口")
     @PostMapping("/logout")
-    public Result<Void> logout(){
-        authService.logout();
+    public Result<Void> logout(@RequestHeader("Authorization") String authorization){
+        String token = authorization.substring(7);  //去掉Bearer
+        authService.logout(token);
         return Result.success();
     }
-
 
 }

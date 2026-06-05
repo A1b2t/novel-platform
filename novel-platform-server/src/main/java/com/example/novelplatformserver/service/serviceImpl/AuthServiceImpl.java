@@ -3,6 +3,7 @@ package com.example.novelplatformserver.service.serviceImpl;
 import com.example.novelplatformserver.mapper.UserMapper;
 import com.example.novelplatformserver.mapper.UserRoleMapper;
 import com.example.novelplatformserver.service.AuthService;
+import com.example.novelplatformserver.service.TokenService;
 import com.example.novelplatformserver.utils.JwtUtil;
 import com.example.constant.RoleConstant;
 import com.example.dto.LoginDTO;
@@ -36,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRoleMapper userRoleMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Value("${jwt.expiration}")
     private Long expireTime;
@@ -135,8 +137,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout() {
-        log.info("用户退出登录");
-        // TODO: 如果 Token 存了 Redis，在这里清除
+    public void logout(String token) {
+        Long userId = com.example.context.UserContext.getUserId();
+        tokenService.addToBlacklist(token);
+        log.info("用户退出登录, id:{}, token已加入黑名单", userId);
     }
 }
