@@ -27,15 +27,20 @@ public class TokenService {
      * 将 Token 加入黑名单（退出登录时调用）
      */
     public void addToBlacklist(String token) {
-        String tokenId = jwtUtil.getTokenId(token);
-        long expireTime = jwtUtil.getRemainingTime(token);
-        if (expireTime > 0) {
-            redisTemplate.opsForValue().set(
-                    BLACKLIST_PREFIX + tokenId, //黑名单的键
-                    "1",    //固定值，标识此token已被拉黑
-                    expireTime, //过期时长，与token剩余有效时间一致
-                    TimeUnit.SECONDS
-            );
+        log.info("addToBlacklist token: [{}]", token);
+        try {
+            String tokenId = jwtUtil.getTokenId(token);
+            long expireTime = jwtUtil.getRemainingTime(token);
+            if (expireTime > 0) {
+                redisTemplate.opsForValue().set(
+                        BLACKLIST_PREFIX + tokenId,
+                        "1",
+                        expireTime,
+                        TimeUnit.SECONDS
+                );
+            }
+        } catch (Exception e) {
+            log.error("addToBlacklist 失败", e);
         }
     }
 
@@ -45,9 +50,7 @@ public class TokenService {
     public boolean isBlacklisted(String token) {
         try {
             String tokenId = jwtUtil.getTokenId(token);
-            return Boolean.TRUE.equals(         //防止redisTemplate.hasKey()返回null
-                    redisTemplate.hasKey(
-                            BLACKLIST_PREFIX + tokenId));
+            return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + tokenId));   // //防止redisTemplate.hasKey()返回null
         }catch(JwtException e){
             // token本身有问题
             return true;

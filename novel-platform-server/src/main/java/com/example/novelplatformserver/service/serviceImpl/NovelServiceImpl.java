@@ -9,11 +9,14 @@ import com.example.novelplatformserver.mapper.CategoryMapper;
 import com.example.novelplatformserver.mapper.NovelMapper;
 import com.example.novelplatformserver.service.NovelService;
 import com.example.vo.novel.NovelDetailVO;
+import com.example.vo.novel.NovelListVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * 小说服务实现
@@ -67,5 +70,27 @@ public class NovelServiceImpl implements NovelService {
             throw new BusinessException("小说不存在");
         }
         return vo;
+    }
+
+    /*获取小说列表*/
+    @Override
+    public List<NovelListVO> getNovelList() {
+        return novelMapper.selectList();
+    }
+
+    /*模糊搜索小说*/
+    @Override
+    public List<NovelListVO> searchNovel(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return novelMapper.selectList();
+        }
+        return novelMapper.searchByKeyword(keyword.trim());
+    }
+
+    /*按分类查询小说*/
+    @Override
+    public List<NovelListVO> getNovelsByCategory(Long categoryId) {
+        log.info("按分类查询小说, categoryId:{}", categoryId);
+        return novelMapper.selectByCategoryId(categoryId);
     }
 }

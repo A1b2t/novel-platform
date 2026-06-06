@@ -40,30 +40,31 @@ public class SecurityConfig {
                 // 配置接口权限
                 .authorizeHttpRequests(auth -> auth
                                 // 登录注册放行
-                                .requestMatchers("/api/v1/portal/auth/register").permitAll()
-                                .requestMatchers("/api/v1/portal/auth/login").permitAll()
+                                .requestMatchers(
+                                        "/api/v1/auth/register",
+                                        "/api/v1/auth/login"
+                                ).permitAll()
+                                // auth 其他接口（me、logout）需要登录
+                                .requestMatchers("/api/v1/auth/**").authenticated()
+                                // 公开浏览接口放行
+                                .requestMatchers("/api/v1/public/**").permitAll()
                                 // Knife4j 文档放行
-//                .requestMatchers(
-//                    "/swagger-ui/**",
-//                    "/v3/api-docs/**",
-//                    "/doc.html",
-//                    "/webjars/**",//开始出了点小bug，关键修复
-                            //Spring Boot已经帮处理了 /static资源映射，所以这里可以不用管
-//                    "/**/*.js",
-//                    "/**/*.css",
-//                    "/**/*.png",
-//                    "/**/*.ico"
-//                ).permitAll()
                                 .requestMatchers(
                                         "/swagger-ui/**",
                                         "/v3/api-docs/**",
                                         "/doc.html",
                                         "/webjars/**",
                                         "/static/**",
-                                        "/favicon.ico"  //浏览器标签页上的小图标，不加的话，如果被 Security 拦截了，浏览器控制台会多一个 403 请求，但不影响页面显示
+                                        "/favicon.ico"
                                 ).permitAll()
-                                // 其他接口需要认证
-                                .anyRequest().authenticated()
+                                // 前台登录用户接口
+                                .requestMatchers("/api/v1/portal/**").authenticated()
+                                // 作者端接口需要 AUTHOR 或 ADMIN 角色
+                                .requestMatchers("/api/v1/author/**").hasAnyRole("AUTHOR", "ADMIN")
+                                // 管理端接口需要 ADMIN 角色
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                // 默认拒绝未配置的接口
+                                .anyRequest().denyAll()
                 )
                 // 关掉 Spring Security 自带的登录页面
                 .formLogin().disable()

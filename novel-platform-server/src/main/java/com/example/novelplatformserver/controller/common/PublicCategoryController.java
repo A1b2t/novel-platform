@@ -1,4 +1,4 @@
-package com.example.novelplatformserver.controller.portal;
+package com.example.novelplatformserver.controller.common;
 
 import com.example.novelplatformserver.service.CategoryService;
 import com.example.response.Result;
@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 前台 - 分类接口
+ * 公开 - 分类接口（无需登录）
  */
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/portal/category")
-@Tag(name = "前台分类接口")
-public class CategoryController {
+@RequestMapping("/api/v1/public/categories")
+@Tag(name = "公开浏览接口")
+public class PublicCategoryController {
 
     private final CategoryService categoryService;
 

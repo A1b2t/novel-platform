@@ -37,10 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         try {
             String header = request.getHeader("Authorization");
+            String token = null;
             if (header != null && header.startsWith("Bearer ")) {
-                String token = header.substring(7);
+                token = header.substring(7);
+            } else if (header != null) {
+                // 兼容无Bearer 前缀的情况（Knife4j等工具可能直接传Token）
+                token = header;
+            }
 
-                //检查 Token 是否已加入黑名单（退出登录后）
+            if (token != null) {
+                //检查 Token是否已加入黑名单（退出登录后）
                 if (tokenService.isBlacklisted(token)) {
                     filterChain.doFilter(request, response);    //不放行，直接跳过
                     return;
