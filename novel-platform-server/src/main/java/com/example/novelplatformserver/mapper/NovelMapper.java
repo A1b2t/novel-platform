@@ -29,4 +29,10 @@ public interface NovelMapper extends BaseMapper<Novel> {
      */
     @Update("UPDATE novel SET read_count = read_count + 1 WHERE id = #{id} AND deleted = 0")
     int incrementReadCount(@Param("id") Long id);
+
+    /**
+     * 统计同作者下同名小说数量
+     */
+    @Select("SELECT COUNT(*) FROM novel WHERE novel_name = #{novelName} AND author_id = #{authorId} AND deleted = 0")
+    Long selectCountByNovelNameAndAuthor(@Param("novelName") String novelName, @Param("authorId") Long authorId);
 }

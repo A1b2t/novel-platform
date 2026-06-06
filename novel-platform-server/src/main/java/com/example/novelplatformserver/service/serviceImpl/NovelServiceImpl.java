@@ -30,10 +30,16 @@ public class NovelServiceImpl implements NovelService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createNovel(NovelCreateDTO dto, Long authorId) {
-        // 校验分类是否存在
+        // 校验分类是否存在且启用
         Category category = categoryMapper.selectById(dto.getCategoryId());
-        if (category == null || category.getDeleted() == 1) {
-            throw new BusinessException("分类不存在");
+        if (category == null || category.getDeleted() == 1 || category.getStatus() == 0) {
+            throw new BusinessException("分类不存在或已禁用");
+        }
+
+        // 校验同作者下小说名是否重复
+        Long count = novelMapper.selectCountByNovelNameAndAuthor(dto.getNovelName(), authorId);
+        if (count > 0) {
+            throw new BusinessException("该小说名已存在");
         }
 
         Novel novel = new Novel();
